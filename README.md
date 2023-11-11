@@ -7,3 +7,4 @@ It is an application, which can store recipes with the list of indigents, genera
 
 - Having a web page with WebAssembly
 - add a list of items at home and suggest recipes
+- Notes feature about the symptons
