@@ -10,6 +10,20 @@ pub enum IndigentType {
     Other,
 }
 
+impl IndigentType {
+    pub fn from_u32(input: u32) -> IndigentType {
+        match input {
+            1 => IndigentType::Vegetable,
+            2 => IndigentType::Fruit,
+            3 => IndigentType::Seed,
+            4 => IndigentType::Dairy,
+            5 => IndigentType::Meat,
+            6 => IndigentType::Fish,
+            _ => IndigentType::Other,
+        }
+    }
+}
+
 /// An indigent of a recipe.
 /// This struct is used to store each indigents in a database. These can be attached to recipes.
 #[derive(Debug, Clone)]
@@ -21,10 +35,10 @@ pub struct Indigent {
 
 impl Indigent {
     /// Create a new indigent.
-    pub fn new(name: &str, indigent_type: IndigentType) -> Indigent {
+    pub fn new(name: &str, indigent_id: u32, indigent_type: IndigentType) -> Indigent {
         Indigent {
             name: name.to_owned(),
-            indigent_id: 0,
+            indigent_id,
             indigent_type,
         }
     }

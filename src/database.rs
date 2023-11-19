@@ -39,6 +39,8 @@ impl RecipeDatabase {
 
     /// Add an indigent to the database.
     pub fn add_indigent(&mut self, indigent: Indigent) {
+        let id = 1 + self.indigents.len() as u32;
+        let indigent = Indigent::new(indigent.name.as_str(), id, indigent.indigent_type);
         self.indigents.insert(indigent.indigent_id(), indigent);
     }
 
@@ -109,7 +111,7 @@ mod tests {
     #[test]
     fn add_indigent() {
         let mut database = RecipeDatabase::new();
-        let indigent = Indigent::new("indigent", IndigentType::Other);
+        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
         database.add_indigent(indigent);
         assert_eq!(database.indigents.len(), 1);
     }
@@ -126,7 +128,7 @@ mod tests {
     #[test]
     fn get_indigent() {
         let mut database = RecipeDatabase::new();
-        let indigent = Indigent::new("indigent", IndigentType::Other);
+        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
         database.add_indigent(indigent);
         let indigent = database.get_indigent(0).unwrap();
         assert_eq!(indigent.name, "indigent");
