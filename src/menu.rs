@@ -11,6 +11,9 @@ pub fn draw_menu(db: &mut crate::database::RecipeDatabase) {
     println!("6. Help");
     println!("7. Exit");
 
+    println!("*********************************");
+    println!();
+
     let mut input = String::new();
     loop {
         io::stdin().read_line(&mut input).expect("Failed to read line");
@@ -25,7 +28,7 @@ pub fn draw_menu(db: &mut crate::database::RecipeDatabase) {
                 break;
             },
             2 => {
-                recipe_menu();
+                recipe_menu(db);
                 break;
             },
             3 => {
@@ -65,7 +68,8 @@ fn indigent_menu(db: &mut crate::database::RecipeDatabase) {
     println!("1. Add an indigent");
     println!("2. Remove an indigent");
     println!("3. List all indigents");
-    println!("4. Back");
+    println!("4. Import indigents from file");
+    println!("5. Back");
 
     let mut input = String::new();
     loop {
@@ -89,6 +93,10 @@ fn indigent_menu(db: &mut crate::database::RecipeDatabase) {
                 break;
             },
             4 => {
+                import_indigents_from_file(db);
+                break;
+            },
+            5 => {
                 draw_menu(db);
                 break;
             },
@@ -98,6 +106,9 @@ fn indigent_menu(db: &mut crate::database::RecipeDatabase) {
             },
         }
     }
+
+    println!("*********************************");
+    println!();
 }
 
 fn add_indigent(db: &mut crate::database::RecipeDatabase) {
@@ -136,6 +147,8 @@ fn add_indigent(db: &mut crate::database::RecipeDatabase) {
     db.add_indigent(indigent);
 
     info!("Indigent {} added to the database.", name);
+    println!("*********************************");
+    println!();
     indigent_menu(db);
 }
 
@@ -157,6 +170,8 @@ fn remove_indigent(db: &mut crate::database::RecipeDatabase) {
     db.remove_indigent(input);
 
     info!("Indigent {} removed from the database.", input);
+    println!("*********************************");
+    println!();
     indigent_menu(db);
 }
 
@@ -168,12 +183,86 @@ fn list_all_indigents(db: &mut crate::database::RecipeDatabase) {
         println!("{}: {}", indigent.indigent_id(), indigent.name);
     }
 
+    println!("*********************************");
+    println!();
     indigent_menu(db);
 }
 
-fn recipe_menu() {
+fn import_indigents_from_file(db: &mut crate::database::RecipeDatabase) {
+    println!("*********************************");
+    println!("Import indigents from file");
+    println!("Please enter the path to the file");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).expect("Failed to read line");
+
+    let path = input.trim();
+
+    let indigents = crate::indigent::Indigent::from_file(path);
+
+    for indigent in indigents {
+        db.add_indigent(indigent);
+    }
+
+    println!("*********************************");
+    println!();
+    indigent_menu(db);
+}
+
+fn recipe_menu(db: &mut crate::database::RecipeDatabase) {
     println!("*********************************");
     println!("Recipe menu");
+
+    println!("1. Create a recipe");
+    println!("2. Remove a recipe");
+    println!("3. List all recipes");
+    println!("4. Back");
+
+    let mut input = String::new();
+    loop {
+        io::stdin().read_line(&mut input).expect("Failed to read line");
+        let input: u32 = match input.trim().parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        match input {
+            1 => {
+                create_recipe();
+                break;
+            },
+            2 => {
+                remove_recipe();
+                break;
+            },
+            3 => {
+                list_all_recipes();
+                break;
+            },
+            4 => {
+                draw_menu(db);
+                break;
+            },
+            _ => {
+                println!("Please enter a number between 1 and 4");
+                continue;
+            },
+        }
+    }
+}
+
+fn create_recipe() {
+    println!("*********************************");
+    println!("Create a recipe");
+}
+
+fn remove_recipe() {
+    println!("*********************************");
+    println!("Remove a recipe");
+}
+
+fn list_all_recipes() {
+    println!("*********************************");
+    println!("List all recipes");
 }
 
 fn generate_daily_menu() {

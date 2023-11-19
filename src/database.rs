@@ -41,6 +41,12 @@ impl RecipeDatabase {
     pub fn add_indigent(&mut self, indigent: Indigent) {
         let id = 1 + self.indigents.len() as u32;
         let indigent = Indigent::new(indigent.name.as_str(), id, indigent.indigent_type);
+        for ind in self.indigents.values() {
+            if ind.name == indigent.name {
+                println!("Indigent {} already exists in the database.", ind.name);
+                return;
+            }
+        }
         self.indigents.insert(indigent.indigent_id(), indigent);
     }
 
@@ -111,6 +117,16 @@ mod tests {
     #[test]
     fn add_indigent() {
         let mut database = RecipeDatabase::new();
+        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
+        database.add_indigent(indigent);
+        assert_eq!(database.indigents.len(), 1);
+    }
+
+    #[test]
+    fn add_existing_indigents() {
+        let mut database = RecipeDatabase::new();
+        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
+        database.add_indigent(indigent);
         let indigent = Indigent::new("indigent", 1,IndigentType::Other);
         database.add_indigent(indigent);
         assert_eq!(database.indigents.len(), 1);
