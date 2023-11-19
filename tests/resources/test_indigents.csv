@@ -1,8 +1,9 @@
-Banana;Fruit
-Carrot;Vegetable
-Salmon;Fish
-Chicken Breast;Meat
-Strawberry;Fruit
-Banana;Fruit
-Almond;Other
-Greek joghurt;Dairy
+name;indigent_type;indigent_id
+Carrot;Vegetable;0
+Salmon;Fish;0
+Chicken Breast;Meat;0
+Strawberry;Fruit;0
+Banana;Fruit;0
+Almond;Other;0
+Greek joghurt;Dairy;0
+Banana;Fruit;0

@@ -1,6 +1,7 @@
-use std::io::BufRead;
+use serde::{Serialize, Deserialize};
+use csv::ReaderBuilder;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum IndigentType {
     Vegetable,
     Fruit,
@@ -27,7 +28,7 @@ impl IndigentType {
 
 /// An indigent of a recipe.
 /// This struct is used to store each indigents in a database. These can be attached to recipes.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Indigent {
     pub name: String,
     indigent_id: u32,
@@ -59,26 +60,18 @@ impl Indigent {
     /// let indigents = Indigent::from_file("indigents.csv");
     /// ```
     pub fn from_file(file_name: &str) -> Vec<Indigent> {
+
         let mut indigents = Vec::new();
         let file = std::fs::File::open(file_name).expect("Failed to open file");
-        let reader = std::io::BufReader::new(file);
-        for line in reader.lines() {
-            let line = line.expect("Failed to read line");
-            let mut line = line.split(";");
-            let name = line.next().expect("Failed to get name");
-            let indigent_type = line.next().expect("Failed to get type");
-            let indigent_type = match indigent_type {
-                "Vegetable" => IndigentType::Vegetable,
-                "Fruit" => IndigentType::Fruit,
-                "Seed" => IndigentType::Seed,
-                "Dairy" => IndigentType::Dairy,
-                "Meat" => IndigentType::Meat,
-                "Fish" => IndigentType::Fish,
-                _ => IndigentType::Other,
-            };
-            let indigent = Indigent::new(name, 0, indigent_type);
+        let mut reader = ReaderBuilder::new()
+            .delimiter(b';')
+            .from_reader(file);
+
+        for record in reader.deserialize() {
+            let indigent: Indigent = record.expect("Failed to read record");
             indigents.push(indigent);
         }
+
         indigents
     }
 }
@@ -88,3 +81,4 @@ impl PartialEq for Indigent {
         self.indigent_id == other.indigent_id
     }
 }
+
