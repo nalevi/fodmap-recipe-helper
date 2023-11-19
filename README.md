@@ -11,6 +11,7 @@ The application provides a very simple terminal UI, which can be used to interac
 - Generate a weekly meal plan
 - Generate a shopping list for the meal plan
 - List all recipes
+- import indigents and recipes from CSV formatted file
 
 ## Out of initial scope, but upcoming features
 
