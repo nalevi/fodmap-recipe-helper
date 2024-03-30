@@ -6,8 +6,8 @@ use std::collections::HashMap;
 use crate::indigent::{Indigent, IndigentType};
 use crate::recipes::{Recipe, RecipeBuilder};
 
-pub fn get_connection() -> sqlite::Connection {
-    let connection = sqlite::open("fodmapdb").unwrap();
+pub fn get_connection(db_name: &str) -> sqlite::Connection {
+    let connection = sqlite::open(db_name).unwrap();
 
     connection
 }
@@ -89,7 +89,10 @@ pub fn get_all_indigents(conn: &sqlite::Connection) -> Result<Vec<Indigent>, sql
     Ok(indigents)
 }
 
-pub fn insert_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result<(), sqlite::Error> {
+pub fn insert_indigent(
+    conn: &sqlite::Connection,
+    indigent: &Indigent,
+) -> Result<(), sqlite::Error> {
     let query = "INSERT INTO indigents (name, food_type) VALUES (?, ?)";
     let mut stmt = conn.prepare(query)?;
 
@@ -103,7 +106,10 @@ pub fn insert_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result
     Ok(())
 }
 
-pub  fn delete_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result<(), sqlite::Error> {
+pub fn delete_indigent(
+    conn: &sqlite::Connection,
+    indigent: &Indigent,
+) -> Result<(), sqlite::Error> {
     let query = "DELETE FROM indigents WHERE id = ?";
     let mut stmt = conn.prepare(query)?;
 
@@ -116,7 +122,10 @@ pub  fn delete_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Resul
     Ok(())
 }
 
-pub fn update_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result<(), sqlite::Error> {
+pub fn update_indigent(
+    conn: &sqlite::Connection,
+    indigent: &Indigent,
+) -> Result<(), sqlite::Error> {
     let query = "UPDATE indigents SET name = ?, food_type = ? WHERE id = ?";
     let mut stmt = conn.prepare(query)?;
 
@@ -132,4 +141,46 @@ pub fn update_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use crate::indigent::{Indigent, IndigentType};
+
+    #[test]
+    fn test_create_db() {
+        let conn = get_connection("test_create_db.db3");
+        let result = create_db(&conn);
+        assert_eq!(result.is_ok(), true);
+    }
+
+    #[test]
+    fn test_insert_indigent() {
+        let conn = get_connection("test_insert_indigent.db3");
+
+        let result = create_db(&conn);
+        assert_eq!(result.is_ok(), true);
+
+        let indigent = Indigent::new("Corn", 1, IndigentType::Vegetable);
+        let result = insert_indigent(&conn, &indigent);
+        assert_eq!(result.is_ok(), true);
+    }
+
+    #[test]
+    fn test_get_all_indigents() {
+        let conn = get_connection("test_get_all_indigents.db3");
+
+        let result = create_db(&conn);
+        assert_eq!(result.is_ok(), true);
+
+        let indigent = Indigent::new("Corn", 0, IndigentType::Vegetable);
+        let result = insert_indigent(&conn, &indigent);
+        assert_eq!(result.is_ok(), true);
+
+        let indigent = Indigent::new("Carrot", 0, IndigentType::Vegetable);
+        let result = insert_indigent(&conn, &indigent);
+        assert!(result.is_ok());
+
+        let indigents = get_all_indigents(&conn);
+        assert_eq!(indigents.is_ok(), true);
+        assert_eq!(indigents.unwrap().len(), 2);
+    }
+}
