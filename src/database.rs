@@ -1,166 +1,135 @@
-use std::collections::HashMap;
+use log::{error, info};
+use sqlite::Error;
 use std::borrow::Borrow;
+use std::collections::HashMap;
 
+use crate::indigent::{Indigent, IndigentType};
 use crate::recipes::{Recipe, RecipeBuilder};
-use crate::indigent::Indigent;
 
-// static mut INDIGENT_ID: Arc<u32> = Arc::new(0);
-// static mut RECIPE_ID: Arc<u32> = Arc::new(0);
+pub fn get_connection() -> sqlite::Connection {
+    let connection = sqlite::open("fodmapdb").unwrap();
 
-/// An in-database for recipes and indigents.
-/// This struct is used to store recipes and indigents.
-pub struct RecipeDatabase {
-    recipes: HashMap<u32, Recipe>,
-    indigents: HashMap<u32, Indigent>,
+    connection
 }
 
-impl RecipeDatabase {
-    /// Create a new RecipeDatabase.
-    pub fn new() -> RecipeDatabase {
-        RecipeDatabase {
-            recipes: HashMap::new(),
-            indigents: HashMap::new(),
-        }
+pub fn create_db(conn: &sqlite::Connection) -> Result<(), sqlite::Error> {
+    let query = "DROP TABLE IF EXISTS indigents";
+    let mut stmt = conn.prepare(query)?;
+
+    if let Err(e) = stmt.next() {
+        error!("Error dropping table indigents: {}", e);
     }
 
-    /// Add a recipe to the database.
-    pub fn add_recipe(&mut self, recipe: Recipe) {
-        let id = 1 + self.recipes.len() as u32;
+    let query = "CREATE TABLE indigents (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        food_type TEXT NOT NULL
+    )";
+    let mut stmt = conn.prepare(query)?;
 
-        let recipe_to_insert = RecipeBuilder::new(recipe.name())
-            .recipe_type(recipe.recipe_type().clone().borrow())
-            .indigents(recipe.indigents().clone())
-            .steps(recipe.steps().clone())
-            .recipe_id(id)
-            .build();
-
-        self.recipes.insert(recipe_to_insert.recipe_id(), recipe_to_insert);
+    if let Err(e) = stmt.next() {
+        error!("Error creating table indigents: {}", e);
     }
 
-    /// Add an indigent to the database.
-    pub fn add_indigent(&mut self, indigent: Indigent) {
-        let id = 1 + self.indigents.len() as u32;
-        let indigent = Indigent::new(indigent.name.as_str(), id, indigent.indigent_type);
-        for ind in self.indigents.values() {
-            if ind.name == indigent.name {
-                println!("Indigent {} already exists in the database.", ind.name);
-                return;
-            }
-        }
-        self.indigents.insert(indigent.indigent_id(), indigent);
+    let query = "DROP TABLE IF EXISTS recipes";
+    let mut stmt = conn.prepare(query)?;
+
+    if let Err(e) = stmt.next() {
+        error!("Error dropping table recipes: {}", e);
     }
 
-    /// Get a recipe from the database.
-    pub fn get_recipe_by_id(&self, recipe_id: u32) -> Option<&Recipe> {
-        self.recipes.get(&recipe_id)
+    let query = "CREATE TABLE recipes (
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        ingredients TEXT NOT NULL,
+        instructions TEXT NOT NULL
+    )";
+    let mut stmt = conn.prepare(query)?;
+
+    if let Err(e) = stmt.next() {
+        error!("Error creating table recipes: {}", e);
     }
 
-    pub fn get_recipe_by_name(&self, recipe_name: &str) -> Option<&Recipe> {
-        for recipe in self.recipes.values() {
-            if recipe.name() == recipe_name {
-                return Some(recipe);
-            }
-        }
-        None
+    Ok(())
+}
+
+pub fn get_indigent_by_id(conn: &sqlite::Connection, id: u32) -> Result<Indigent, sqlite::Error> {
+    let query = "SELECT * FROM indigents WHERE id = ?";
+    let mut stmt = conn.prepare(query)?;
+
+    stmt.bind((1, id as i64))?;
+
+    let mut indigent = Indigent::new("", 0, IndigentType::Other);
+    while let sqlite::State::Row = stmt.next()? {
+        let ind_t = stmt.read::<i64, usize>(2)? as u32;
+        indigent = Indigent::new(
+            &stmt.read::<String, usize>(1)?,
+            stmt.read::<i64, usize>(0)? as u32,
+            IndigentType::from_u32(ind_t),
+        );
     }
 
-    /// Get an indigent from the database.
-    pub fn get_indigent(&self, indigent_id: u32) -> Option<&Indigent> {
-        self.indigents.get(&indigent_id)
+    Ok(indigent)
+}
+
+pub fn get_all_indigents(conn: &sqlite::Connection) -> Result<Vec<Indigent>, sqlite::Error> {
+    let query = "SELECT * FROM indigents";
+    let mut stmt = conn.prepare(query)?;
+
+    let mut indigents = Vec::new();
+    while let sqlite::State::Row = stmt.next()? {
+        let ind_t = stmt.read::<i64, usize>(2)? as u32;
+        indigents.push(Indigent::new(
+            &stmt.read::<String, usize>(1)?,
+            stmt.read::<i64, usize>(0)? as u32,
+            IndigentType::from_u32(ind_t),
+        ));
     }
 
-    /// Get all recipes from the database.
-    pub fn get_all_recipes(&self) -> Vec<&Recipe> {
-        self.recipes.values().collect()
+    Ok(indigents)
+}
+
+pub fn insert_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result<(), sqlite::Error> {
+    let query = "INSERT INTO indigents (name, food_type) VALUES (?, ?)";
+    let mut stmt = conn.prepare(query)?;
+
+    stmt.bind((1, indigent.name.as_str()))?;
+    stmt.bind::<(usize, i64)>((2, indigent.indigent_type.to_u32().into()))?;
+
+    if let Err(e) = stmt.next() {
+        error!("Error inserting indigent: {}", e);
     }
 
-    /// Get all indigents from the database.
-    pub fn get_all_indigents(&self) -> Vec<&Indigent> {
-        self.indigents.values().collect()
+    Ok(())
+}
+
+pub  fn delete_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result<(), sqlite::Error> {
+    let query = "DELETE FROM indigents WHERE id = ?";
+    let mut stmt = conn.prepare(query)?;
+
+    stmt.bind((1, indigent.indigent_id() as i64))?;
+
+    if let Err(e) = stmt.next() {
+        error!("Error deleting indigent: {}", e);
     }
 
-    /// Remove a recipe from the database.
-    pub fn remove_recipe(&mut self, recipe_id: u32) -> Option<Recipe> {
-        self.recipes.remove(&recipe_id)
+    Ok(())
+}
+
+pub fn update_indigent(conn: &sqlite::Connection, indigent: &Indigent) -> Result<(), sqlite::Error> {
+    let query = "UPDATE indigents SET name = ?, food_type = ? WHERE id = ?";
+    let mut stmt = conn.prepare(query)?;
+
+    stmt.bind((1, indigent.name.as_str()))?;
+    stmt.bind::<(usize, i64)>((2, indigent.indigent_type.to_u32().into()))?;
+    stmt.bind((3, indigent.indigent_id() as i64))?;
+
+    if let Err(e) = stmt.next() {
+        error!("Error updating indigent: {}", e);
     }
 
-    /// Remove an indigent from the database.
-    pub fn remove_indigent(&mut self, indigent_id: u32) -> Option<Indigent> {
-        self.indigents.remove(&indigent_id)
-    }
+    Ok(())
 }
 
 #[cfg(test)]
-mod tests {
-    use crate::recipes::{RecipeBuilder};
-    use crate::indigent::{Indigent, IndigentType};
-    use crate::database::RecipeDatabase;
-
-
-    #[test]
-    fn create_database() {
-        let database = RecipeDatabase::new();
-        assert_eq!(database.recipes.len(), 0);
-        assert_eq!(database.indigents.len(), 0);
-    }
-
-    #[test]
-    fn add_recipe() {
-        let mut database = RecipeDatabase::new();
-        let recipe = RecipeBuilder::new("recipe").build();
-        database.add_recipe(recipe);
-        assert_eq!(database.recipes.len(), 1);
-        assert_eq!(database.recipes.get(&1).unwrap().name(), "recipe");
-        assert_eq!(database.recipes.get(&1).unwrap().recipe_id(), 1);
-    }
-
-    #[test]
-    fn add_indigent() {
-        let mut database = RecipeDatabase::new();
-        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
-        database.add_indigent(indigent);
-        assert_eq!(database.indigents.len(), 1);
-    }
-
-    #[test]
-    fn add_existing_indigents() {
-        let mut database = RecipeDatabase::new();
-        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
-        database.add_indigent(indigent);
-        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
-        database.add_indigent(indigent);
-        assert_eq!(database.indigents.len(), 1);
-    }
-
-    #[test]
-    fn get_recipe_by_id() {
-        let mut database = RecipeDatabase::new();
-        let recipe = RecipeBuilder::new("recipe").build();
-        database.add_recipe(recipe);
-        let recipe = database.get_recipe_by_id(1).unwrap();
-        assert_eq!(recipe.name(), "recipe");
-    }
-
-    #[test]
-    fn get_indigent() {
-        let mut database = RecipeDatabase::new();
-        let indigent = Indigent::new("indigent", 1,IndigentType::Other);
-        database.add_indigent(indigent);
-        let indigent = database.get_indigent(0).unwrap();
-        assert_eq!(indigent.name, "indigent");
-    }
-
-    #[test]
-    fn get_all_recipes() {
-        let mut database = RecipeDatabase::new();
-
-        let recipe = RecipeBuilder::new("recipe").build();
-        database.add_recipe(recipe);
-
-        let recipe = RecipeBuilder::new("recipe2").build();
-        database.add_recipe(recipe);
-
-        let recipes = database.get_all_recipes();
-        assert_eq!(recipes.len(), 2);
-    }
-}
+mod tests {}

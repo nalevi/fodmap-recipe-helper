@@ -15,7 +15,11 @@ pub struct RecipeIndigent {
 
 impl RecipeIndigent {
     fn new(name: &str, amount: u32) -> Self {
-        RecipeIndigent { name: name.to_owned(), amount, indigent_id: 0 }
+        RecipeIndigent {
+            name: name.to_owned(),
+            amount,
+            indigent_id: 0,
+        }
     }
 }
 
@@ -36,7 +40,6 @@ pub enum RecipeType {
     Snack,
     Dessert,
 }
-
 
 #[derive(Debug)]
 pub struct Recipe {
@@ -75,7 +78,10 @@ impl Recipe {
             }
         }
         if !indigent_already_contained {
-            debug!("Added indigent {} to recipe, because it was not contained.", indigent.name);
+            debug!(
+                "Added indigent {} to recipe, because it was not contained.",
+                indigent.name
+            );
             self.indigents.push(indigent);
         }
     }
@@ -205,7 +211,7 @@ impl RecipeBuilder {
 
 #[cfg(test)]
 mod tests {
-    use crate::recipes::{ RecipeBuilder, RecipeIndigent, RecipeType};
+    use crate::recipes::{RecipeBuilder, RecipeIndigent, RecipeType};
 
     #[test]
     fn create_indigent() {
@@ -220,7 +226,9 @@ mod tests {
         let ind_banana = RecipeIndigent::new("Banana", 13);
         let ind_oat = RecipeIndigent::new("Oat", 250);
 
-        let mut recipe = RecipeBuilder::new("recipe").recipe_type(&RecipeType::Lunch).build();
+        let mut recipe = RecipeBuilder::new("recipe")
+            .recipe_type(&RecipeType::Lunch)
+            .build();
         recipe.add_indigent(ind_corn.clone());
         recipe.add_indigent(ind_banana.clone());
         recipe.add_indigent(ind_oat.clone());
@@ -318,5 +326,4 @@ mod tests {
         assert_eq!(recipe.steps[0], "Step 1");
         assert_eq!(recipe.steps[1], "Step 3");
     }
-
 }

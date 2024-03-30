@@ -2,23 +2,26 @@ use std::io;
 
 use log::*;
 
-use tui::backend::Backend;
-use crate::menu::draw_menu;
-
-mod recipes;
-mod indigent;
 mod database;
-mod menu;
+mod indigent;
+mod recipes;
 
 fn main() -> Result<(), io::Error> {
     env_logger::init();
-    info!("Welcome to the Recipe Generator!");
+    let result = Ok(());
+    let database_conn = database::get_connection();
+    database::create_db(&database_conn).unwrap();
 
-    let mut database = database::RecipeDatabase::new();
-    draw_menu(&mut database);
+    indigent::Indigent::from_file("/Users/nalevi/RustroverProjects/fodmap-recipe-helper/tests/resources/test_indigents.csv")
+        .iter()
+        .for_each(|indigent| {
+            database::insert_indigent(&database_conn, indigent).unwrap();
+        });
 
-    info!("=== Bye Bye ===");
+    let indigents_in_db = database::get_all_indigents(&database_conn).unwrap();
+    indigents_in_db.iter().for_each(|indigent| {
+        info!("Indigent: {:?}", indigent);
+    });
 
-
-    Ok(())
+    result
 }

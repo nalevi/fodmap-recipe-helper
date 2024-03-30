@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
 use csv::ReaderBuilder;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub enum IndigentType {
     Vegetable,
     Fruit,
@@ -9,6 +9,7 @@ pub enum IndigentType {
     Dairy,
     Meat,
     Fish,
+    #[default]
     Other,
 }
 
@@ -22,6 +23,18 @@ impl IndigentType {
             5 => IndigentType::Meat,
             6 => IndigentType::Fish,
             _ => IndigentType::Other,
+        }
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        match self {
+            IndigentType::Vegetable => 1,
+            IndigentType::Fruit => 2,
+            IndigentType::Seed => 3,
+            IndigentType::Dairy => 4,
+            IndigentType::Meat => 5,
+            IndigentType::Fish => 6,
+            IndigentType::Other => 7,
         }
     }
 }
@@ -60,12 +73,9 @@ impl Indigent {
     /// let indigents = Indigent::from_file("indigents.csv");
     /// ```
     pub fn from_file(file_name: &str) -> Vec<Indigent> {
-
         let mut indigents = Vec::new();
         let file = std::fs::File::open(file_name).expect("Failed to open file");
-        let mut reader = ReaderBuilder::new()
-            .delimiter(b';')
-            .from_reader(file);
+        let mut reader = ReaderBuilder::new().delimiter(b';').from_reader(file);
 
         for record in reader.deserialize() {
             let indigent: Indigent = record.expect("Failed to read record");
@@ -81,4 +91,3 @@ impl PartialEq for Indigent {
         self.indigent_id == other.indigent_id
     }
 }
-
