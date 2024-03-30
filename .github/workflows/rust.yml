@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Format
-      run: rustfmt src/*.rs test/*.rs
+      run: rustfmt src/*.rs tests/*.rs
     - name: Build
       run: cargo build --verbose
     - name: Run tests
